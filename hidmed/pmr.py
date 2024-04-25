@@ -1,4 +1,5 @@
 """Implementation of the PMR estimator based on Theorem 3"""
+
 import numpy as np
 
 from .cross_fit import CrossFittingEstimator

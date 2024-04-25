@@ -15,8 +15,8 @@ from .bridge_q import KernelBridgeQ
 from .bridge_q_propensity import KernelBridgeQProp
 
 
-LAMBDA_MIN = 1e-7
-LAMBDA_MAX = 1e-1
+LAMBDA_MIN_FACTOR = 1e-7
+LAMBDA_MAX_FACTOR = 1e3
 # LAMBDA_GRID = 50
 
 GAMMA_MIN = 1e-3
@@ -93,10 +93,9 @@ class CrossFittingEstimator:
             params_config["lambda1"] = {"values": [self.params[which]["lambda1"]]}
         else:
             params_config["lambda1"] = {
-                "min": LAMBDA_MIN,
-                "max": LAMBDA_MAX,
+                "min": LAMBDA_MIN_FACTOR * len(fit_data),
+                "max": LAMBDA_MAX_FACTOR * len(fit_data),
                 "scale": "log",
-                # "grid": LAMBDA_GRID,
             }
         if (
             self.params.get(which, None) is not None
@@ -105,10 +104,9 @@ class CrossFittingEstimator:
             params_config["lambda2"] = {"values": [self.params[which]["lambda2"]]}
         else:
             params_config["lambda2"] = {
-                "min": LAMBDA_MIN,
-                "max": LAMBDA_MAX,
+                "min": LAMBDA_MIN_FACTOR * len(fit_data),
+                "max": LAMBDA_MAX_FACTOR * len(fit_data),
                 "scale": "log",
-                # "grid": LAMBDA_GRID,
             }
         if (
             self.params.get(which, None) is not None
@@ -123,9 +121,10 @@ class CrossFittingEstimator:
                 # "grid": GAMMA_GRID,
             }
 
+        # hyperparameter tuning, or use provided values
         if any([len(v.get("values", [])) != 1 for _, v in params_config.items()]):
             objectives_config = {
-                "score": {"target": 1e9, "limit": -1e9},
+                "score": {"target": 1.0, "limit": -1},
             }
             tuner = tune(
                 _fit_bridge,
@@ -140,6 +139,7 @@ class CrossFittingEstimator:
             params = self.params[which]
             scores = {"score": np.nan}
 
+        # fit bridge function
         bridge = method(
             params["lambda1"],
             params["lambda2"],
@@ -216,6 +216,7 @@ class CrossFittingEstimator:
                 "scale": "log",
             }
 
+        # hyperparameter tuning, or use provided values
         if any([len(v.get("values", [])) != 1 for _, v in params_config.items()]):
             objectives_config = {
                 "r2": {"target": 1.0, "limit": 0.0},
@@ -234,6 +235,7 @@ class CrossFittingEstimator:
             params = self.params[name]
             scores = {"r2": np.nan}
 
+        # fit conditional mean
         cond_mean = build_reg(params["alpha"], params["gamma"])
         cond_mean.fit(X, y)
 
@@ -294,6 +296,7 @@ class CrossFittingEstimator:
                 "grid": DEGREE_MAX - DEGREE_MIN + 1,
             }
 
+        # hyperparameter tuning, or use provided values
         if any([len(v.get("values", [])) != 1 for _, v in params_config.items()]):
             objectives_config = {"log_loss": {"target": 0.0, "limit": 1e2}}
             tuner = tune(
@@ -306,6 +309,7 @@ class CrossFittingEstimator:
             params = self.params["treatment"]
             scores = {"log_loss": np.nan}
 
+        # fit treatment probability
         prob = build_reg(params["C"], params["degree"])
         prob.fit(fit_data.x, fit_data.a.flatten())
 
