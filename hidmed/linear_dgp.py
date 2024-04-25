@@ -43,8 +43,8 @@ class LinearHidMedDGP:
         azwy_sampler = np.random.uniform if azwy_nonnegative else sampler
 
         # p(A=1|X,U) = 1/(1 + exp(X @ Wxa + U @ Wua))
-        self.Wxa = sampler(low=0.4 * l, high=0.4 * u, size=(xdim, 1))
-        self.Wua = sampler(low=0.4 * l, high=0.4 * u, size=(udim, 1))
+        self.Wxa = sampler(low=0.1 * l, high=0.1 * u, size=(xdim, 1))
+        self.Wua = sampler(low=0.1 * l, high=0.1 * u, size=(udim, 1))
         # self.Wxa = sampler(low=l, high=u, size=(xdim, 1))
         # self.Wua = sampler(low=l, high=u, size=(udim, 1))
 
@@ -135,7 +135,7 @@ class LinearHidMedDGP:
                 )
                 @ self.Wuy
             )
-            return psi2
+            return psi2.item()
 
     def diagnostics(self, n=100_000):
         """Check that p(A=1|X,U) is bounded away from 0 and 1"""
