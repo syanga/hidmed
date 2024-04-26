@@ -19,8 +19,8 @@ LAMBDA_MIN_FACTOR = 1e-7
 LAMBDA_MAX_FACTOR = 1e4
 # LAMBDA_GRID = 50
 
-GAMMA_MIN = 1e-4
-GAMMA_MAX = 1e0
+GAMMA_MIN_FACTOR = 1e-3
+GAMMA_MAX_FACTOR = 1e0
 # GAMMA_GRID = 10
 
 ALPHA_MIN = 1e-7
@@ -115,8 +115,8 @@ class CrossFittingEstimator:
             params_config["gamma"] = {"values": [self.params[which]["gamma"]]}
         else:
             params_config["gamma"] = {
-                "min": GAMMA_MIN,
-                "max": GAMMA_MAX,
+                "min": GAMMA_MIN_FACTOR / len(fit_data) ** (1 / 2),
+                "max": GAMMA_MAX_FACTOR / len(fit_data) ** (1 / 2),
                 "scale": "log",
                 # "grid": GAMMA_GRID,
             }
@@ -211,8 +211,8 @@ class CrossFittingEstimator:
             params_config["gamma"] = {"values": [self.params[name]["gamma"]]}
         else:
             params_config["gamma"] = {
-                "min": GAMMA_MIN,
-                "max": GAMMA_MAX,
+                "min": GAMMA_MIN_FACTOR / len(X) ** (1 / 2),
+                "max": GAMMA_MAX_FACTOR / len(X) ** (1 / 2),
                 "scale": "log",
             }
 
