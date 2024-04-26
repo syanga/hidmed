@@ -16,11 +16,11 @@ from .bridge_q_propensity import KernelBridgeQProp
 
 
 LAMBDA_MIN_FACTOR = 1e-7
-LAMBDA_MAX_FACTOR = 1e3
+LAMBDA_MAX_FACTOR = 1e4
 # LAMBDA_GRID = 50
 
-GAMMA_MIN = 1e-3
-GAMMA_MAX = 1e1
+GAMMA_MIN = 1e-4
+GAMMA_MAX = 1e0
 # GAMMA_GRID = 10
 
 ALPHA_MIN = 1e-7
