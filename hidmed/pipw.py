@@ -14,7 +14,7 @@ class ProximalInverseProbWeighting(CrossFittingEstimator):
         num_runs=200,
         n_jobs=1,
         verbose=True,
-        q=None,
+        **kwargs,
     ):
         super().__init__(
             generalized_model=generalized_model,
@@ -24,8 +24,8 @@ class ProximalInverseProbWeighting(CrossFittingEstimator):
             n_jobs=n_jobs,
             verbose=verbose,
         )
-        if q is not None:
-            self.params["q"] = q
+        if "q" in kwargs:
+            self.params["q"] = kwargs["q"]
 
     def psi1_regression(self, q_fn, fit_data, val_data):
         """Fit conditional mean of y * q, given A=1, X"""
@@ -46,19 +46,14 @@ class ProximalInverseProbWeighting(CrossFittingEstimator):
     def estimate(self, fit_data, eval_data, val_data):
         """Implements the PIPW estimator"""
         q_fn, q_params, _ = self.fit_bridge(fit_data, val_data, which="q")
-
-        # save chosen parameters
         self.params["q"] = q_params
 
         # estimate psi_1
         if not self.generalized_model:
             loc_1 = eval_data.a[:, 0] == 1
-            return np.mean(
-                eval_data.y[loc_1, 0]
-                * q_fn(np.hstack((eval_data.z[loc_1], eval_data.x[loc_1])))
-            )
+            q1 = q_fn(np.hstack((eval_data.z[loc_1], eval_data.x[loc_1])))
+            return eval_data.y[loc_1, 0] * q1
 
         # estimate for psi_2
-        return np.mean(
-            eval_data.a * eval_data.y * q_fn(np.hstack((eval_data.z, eval_data.x)))
-        )
+        q_eval = q_fn(np.hstack((eval_data.z, eval_data.x)))
+        return eval_data.a[:, 0] * eval_data.y[:, 0] * q_eval

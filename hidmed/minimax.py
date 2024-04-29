@@ -40,7 +40,7 @@ def score_nuisance_function(h1, kf0, kf1, kf2, kf, g1, g2, lambda2):
     """
     Score a fitted nuisance function (function h) by solving the minimax problem
     with respect to the beta vector (function f), with the values h(r1) fixed.
-    Returns a score (higher is better).
+    Returns a score (lower is better).
     """
     # form full KKT system
     kkt_matrix = kf2.T.dot(kf2) + lambda2 * kf
@@ -55,4 +55,15 @@ def score_nuisance_function(h1, kf0, kf1, kf2, kf, g1, g2, lambda2):
         + np.mean(g2 * f_values_0)
         - np.mean(f_values_2**2)
     )
-    return -metric
+    return metric
+
+
+# @njit
+# def score_nuisance_function(g1, g2, h1, f0, f1, f2):
+#     """
+#     Score a fitted nuisance function (function h) by solving the minimax problem
+#     with respect to the beta vector (function f), with the values h(r1) fixed.
+#     Returns a score (lower is better).
+#     """
+#     metric = np.mean(g1 * h1 * f1) + np.mean(g2 * f0) - np.mean(f2**2)
+#     return metric**2

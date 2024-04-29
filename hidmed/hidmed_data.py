@@ -109,8 +109,10 @@ class HidMedDataset:
         self.data = np.vstack((self.data, dataset.data))
         self.n += dataset.n
 
-    def split(self, num_splits):
+    def split(self, num_splits, seed=None):
         """Split the dataset into num_splits new datasets"""
+        if seed is not None:
+            np.random.seed(seed)
         inds = np.arange(self.n)
         np.random.shuffle(inds)
         split_inds = [np.sort(split) for split in np.array_split(inds, num_splits)]

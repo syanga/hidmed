@@ -8,23 +8,34 @@ class KernelBridgeBase:
     """Estimator for the bridge function in the Proximal generalized hidden
     mediation model"""
 
-    def __init__(self, lambda1, lambda2, gamma, treatment_prob=None):
+    def __init__(self, lambda1, lambda2, gamma1, gamma2, treatment_prob=None):
         self.lambda1 = lambda1
         self.lambda2 = lambda2
-        self.gamma = gamma
+        self.gamma1 = gamma1
+        self.gamma2 = gamma2
         self.treatment_prob = treatment_prob
 
         # fitted values
         self.alpha = None
         self.x = None
+        self.beta = None
+        self.xf = None
 
-    def call_kernel(self, x, y):
+    def kernel1(self, x, y):
         """Call the kernel function with the given data"""
-        return pairwise_kernels(x, y, metric="rbf", gamma=self.gamma)
+        return pairwise_kernels(x, y, metric="rbf", gamma=self.gamma1)
+
+    def kernel2(self, x, y):
+        """Call the kernel function with the given data"""
+        return pairwise_kernels(x, y, metric="rbf", gamma=self.gamma2)
 
     def __call__(self, x):
         """Evaluate the bridge function at the given points"""
-        return self.call_kernel(x, self.x).dot(self.alpha)
+        return self.kernel1(x, self.x).dot(self.alpha)
+
+    def f(self, xf):
+        """Evaluate the bridge function at the given points"""
+        return self.kernel2(xf, self.xf).dot(self.beta)
 
     def fit(self, fit_data):
         """Fit the bridge function using minimax optimization"""

@@ -22,8 +22,8 @@ class LinearHidMedDGP:
         mdim,
         udim,
         ydim=1,
-        l=1.0,
-        u=2.0,
+        l=0.5,
+        u=1.0,
         var=0.1,
         setup="c",
         nonnegative=False,
@@ -43,31 +43,31 @@ class LinearHidMedDGP:
         azwy_sampler = np.random.uniform if azwy_nonnegative else sampler
 
         # p(A=1|X,U) = 1/(1 + exp(X @ Wxa + U @ Wua))
-        self.Wxa = sampler(low=0.4 * l / xdim, high=0.4 * u / xdim, size=(xdim, 1))
-        self.Wua = sampler(low=0.4 * l / xdim, high=0.4 * u / xdim, size=(udim, 1))
-        # self.Wxa = sampler(low=l, high=u, size=(xdim, 1))
-        # self.Wua = sampler(low=l, high=u, size=(udim, 1))
+        self.Wxa = sampler(low=0.4 * l, high=0.4 * u, size=(xdim, 1)) / xdim
+        self.Wua = sampler(low=0.4 * l, high=0.4 * u, size=(udim, 1)) / udim
+        # self.Wxa = sampler(low=l, high=u, size=(xdim, 1)) / xdim
+        # self.Wua = sampler(low=l, high=u, size=(udim, 1)) / udim
 
         # M = X @ Wxm + A @ Wam + epsm
-        self.Wxm = sampler(low=l, high=u, size=(xdim, mdim))
+        self.Wxm = sampler(low=l, high=u, size=(xdim, mdim)) / xdim
         self.Wam = sampler(low=l, high=u, size=(1, mdim))
 
         # Y = X @ Wxy + U @ Wuy + A @ Way + M @ Wmy + W @ Wwy + epsy
-        self.Wxy = sampler(low=l, high=u, size=(xdim, ydim))
-        self.Wuy = sampler(low=l, high=u, size=(udim, ydim))
-        self.Wmy = sampler(low=l, high=u, size=(mdim, ydim))
+        self.Wxy = sampler(low=l, high=u, size=(xdim, ydim)) / xdim
+        self.Wuy = sampler(low=l, high=u, size=(udim, ydim)) / udim
+        self.Wmy = sampler(low=l, high=u, size=(mdim, ydim)) / mdim
         self.Way = sampler(low=l, high=u, size=(1, ydim))
         # self.Way = 2 * np.ones((1, ydim))
-        self.Wwy = azwy_sampler(low=l, high=u, size=(wdim, ydim))
+        self.Wwy = azwy_sampler(low=l, high=u, size=(wdim, ydim)) / wdim
 
         # Z = M @ Wmz + X @ Wxz + A @ Waz + epsz
-        self.Wmz = sampler(low=l, high=u, size=(mdim, zdim))
-        self.Wxz = sampler(low=l, high=u, size=(xdim, zdim))
+        self.Wmz = sampler(low=l, high=u, size=(mdim, zdim)) / mdim
+        self.Wxz = sampler(low=l, high=u, size=(xdim, zdim)) / xdim
         self.Waz = azwy_sampler(low=l, high=u, size=(1, zdim))
 
         # W = M @ Wmw + X @ Wxw + epsw
-        self.Wmw = sampler(low=l, high=u, size=(mdim, wdim))
-        self.Wxw = sampler(low=l, high=u, size=(xdim, wdim))
+        self.Wmw = sampler(low=l, high=u, size=(mdim, wdim)) / mdim
+        self.Wxw = sampler(low=l, high=u, size=(xdim, wdim)) / xdim
 
         # three models
         assert setup in ["a", "b", "c"]

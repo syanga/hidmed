@@ -14,9 +14,7 @@ class ProximalOutcomeRegression(CrossFittingEstimator):
         num_runs=200,
         n_jobs=1,
         verbose=True,
-        treatment=None,
-        h=None,
-        eta=None,
+        **kwargs,
     ):
         super().__init__(
             generalized_model=generalized_model,
@@ -28,12 +26,9 @@ class ProximalOutcomeRegression(CrossFittingEstimator):
         )
 
         # set up any provided parameters
-        if treatment is not None:
-            self.params["treatment"] = treatment
-        if h is not None:
-            self.params["h"] = h
-        if eta is not None:
-            self.params["eta"] = eta
+        for key in ["treatment", "h", "eta"]:
+            if key in kwargs:
+                self.params[key] = kwargs[key]
 
     def estimate(self, fit_data, eval_data, val_data):
         """Implements the POR estimator"""
@@ -47,9 +42,10 @@ class ProximalOutcomeRegression(CrossFittingEstimator):
             # save chosen parameters
             self.params["treatment"] = treatment_params
 
-            # return estimate
+            # psi2
             scale = treatment_prob.predict_proba(eval_data.x)[:, 1]
         else:
+            # psi1
             scale = 1.0
 
         # fit bridge function h
@@ -63,4 +59,4 @@ class ProximalOutcomeRegression(CrossFittingEstimator):
         self.params["eta"] = eta_params
 
         # return estimate without treatment probability
-        return np.mean(eta.predict(eval_data.x) * scale)
+        return eta.predict(eval_data.x) * scale

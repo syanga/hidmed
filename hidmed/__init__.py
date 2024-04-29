@@ -5,7 +5,6 @@ from .minimax import *
 from .bridge_base import *
 from .bridge_h import *
 from .bridge_q import *
-from .bridge_q_propensity import *
 from .cross_fit import *
 from .por import *
 from .pipw import *

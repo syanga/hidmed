@@ -22,25 +22,30 @@ class KernelBridgeH(KernelBridgeBase):
         """Fit the bridge function using minimax optimization"""
         g1, g2, wx, zx, loc = self.extract_data(fit_data)
 
-        kh1 = self.call_kernel(wx[loc], wx)
-        kf1 = self.call_kernel(zx[loc], zx)
-        kh = self.call_kernel(wx, wx)
-        kf = self.call_kernel(zx, zx)
+        kh1 = self.kernel1(wx[loc], wx)
+        kf1 = self.kernel2(zx[loc], zx)
+        kh = self.kernel1(wx, wx)
+        kf = self.kernel2(zx, zx)
 
-        alpha, _ = kkt_solve(
+        alpha, beta = kkt_solve(
             kh1, kf1, kf1, kf1, kh, kf, g1, g2, self.lambda1, self.lambda2
         )
 
         self.alpha = alpha
-        self.x = wx
+        self.x = wx.copy()
+        self.beta = beta
+        self.xf = zx.copy()
 
     def score(self, val_data):
         """Score the bridge function"""
         g1, g2, wx, zx, loc = self.extract_data(val_data)
 
-        kf1 = self.call_kernel(zx[loc], zx)
-        kf = self.call_kernel(zx, zx)
+        # h1 = self(wx[loc])
+        # f1 = self.f(zx[loc])
+        # return score_nuisance_function(g1, g2, h1, f1, f1, f1)
 
+        kf1 = self.kernel2(zx[loc], zx)
+        kf = self.kernel2(zx, zx)
         try:
             return score_nuisance_function(
                 self(wx[loc]),
@@ -50,7 +55,8 @@ class KernelBridgeH(KernelBridgeBase):
                 kf,
                 g1,
                 g2,
-                self.lambda2,
+                1e-6 * kf.shape[0],
+                # self.lambda2,
             )
         except np.linalg.LinAlgError:
-            return -np.inf
+            return np.inf

@@ -12,29 +12,27 @@ from hola.tune import tune
 
 from .bridge_h import KernelBridgeH
 from .bridge_q import KernelBridgeQ
-from .bridge_q_propensity import KernelBridgeQProp
 
 
-LAMBDA_MIN_FACTOR = 1e-7
-LAMBDA_MAX_FACTOR = 1e4
-# LAMBDA_GRID = 50
+LAMBDA_MIN_FACTOR = 1e-6
+LAMBDA_MAX_FACTOR = 50.0
+LAMBDA_GRID = 20
 
-GAMMA_MIN_FACTOR = 1e-3
-GAMMA_MAX_FACTOR = 1e0
-# GAMMA_GRID = 10
+GAMMA_MIN = 1e-3
+GAMMA_MAX = 1e1
+GAMMA_GRID = 50
+
+REG_GAMMA_MIN = 1e-3
+REG_GAMMA_MAX = 1e1
 
 ALPHA_MIN = 1e-7
 ALPHA_MAX = 1e1
 
-C_MIN = 1e-3
-C_MAX = 1e6
+C_MIN = 1e-1
+C_MAX = 1e7
 
 DEGREE_MIN = 1
-DEGREE_MAX = 5
-
-COEF0_MIN = -5.0
-COEF0_MAX = 5.0
-COEF0_GRID = 10
+DEGREE_MAX = 3
 
 
 class CrossFittingEstimator:
@@ -48,6 +46,7 @@ class CrossFittingEstimator:
         num_runs=200,
         n_jobs=1,
         verbose=True,
+        **kwargs,
     ):
         # estimate psi2 if generalized model, else estimate psi1
         self.generalized_model = generalized_model
@@ -69,20 +68,24 @@ class CrossFittingEstimator:
         # verbose output
         self.verbose = verbose
 
-    def fit_bridge(self, fit_data, val_data, which="h", treatment_prob=None):
+    def fit_bridge(self, fit_data, val_data, which="h"):
         """Fit bridge function with hyperparameter tuning"""
         if which == "h":
             method = KernelBridgeH
-        elif treatment_prob is None:
-            method = KernelBridgeQ
         else:
-            method = KernelBridgeQProp
+            method = KernelBridgeQ
 
-        def _fit_bridge(lambda1, lambda2, gamma):
-            est = method(lambda1, lambda2, gamma, treatment_prob=treatment_prob)
+        def _fit_bridge(lambda1, lambda2, gamma1, gamma2):
+            est = method(lambda1, lambda2, gamma1, gamma2)
             est.fit(fit_data)
             score = est.score(val_data)
-            return {"score": score}
+            return {
+                "score": score,
+                "gamma1": gamma1,
+                "gamma2": gamma2,
+                "lambda1": lambda1,
+                "lambda2": lambda2,
+            }
 
         # set up hyperparameter tuning
         params_config = {}
@@ -96,6 +99,7 @@ class CrossFittingEstimator:
                 "min": LAMBDA_MIN_FACTOR * len(fit_data),
                 "max": LAMBDA_MAX_FACTOR * len(fit_data),
                 "scale": "log",
+                "grid": LAMBDA_GRID,
             }
         if (
             self.params.get(which, None) is not None
@@ -107,24 +111,49 @@ class CrossFittingEstimator:
                 "min": LAMBDA_MIN_FACTOR * len(fit_data),
                 "max": LAMBDA_MAX_FACTOR * len(fit_data),
                 "scale": "log",
+                "grid": LAMBDA_GRID,
             }
         if (
             self.params.get(which, None) is not None
-            and self.params[which].get("gamma", None) is not None
+            and self.params[which].get("gamma1", None) is not None
         ):
-            params_config["gamma"] = {"values": [self.params[which]["gamma"]]}
+            params_config["gamma1"] = {"values": [self.params[which]["gamma1"]]}
         else:
-            params_config["gamma"] = {
-                "min": GAMMA_MIN_FACTOR / len(fit_data) ** (1 / 2),
-                "max": GAMMA_MAX_FACTOR / len(fit_data) ** (1 / 2),
+            params_config["gamma1"] = {
+                "min": GAMMA_MIN,
+                "max": GAMMA_MAX,
                 "scale": "log",
-                # "grid": GAMMA_GRID,
+                "grid": GAMMA_GRID,
+            }
+        if (
+            self.params.get(which, None) is not None
+            and self.params[which].get("gamma2", None) is not None
+        ):
+            params_config["gamma2"] = {"values": [self.params[which]["gamma2"]]}
+        else:
+            params_config["gamma2"] = {
+                "min": GAMMA_MIN,
+                "max": GAMMA_MAX,
+                "scale": "log",
+                "grid": GAMMA_GRID,
             }
 
         # hyperparameter tuning, or use provided values
         if any([len(v.get("values", [])) != 1 for _, v in params_config.items()]):
             objectives_config = {
-                "score": {"target": 1.0, "limit": -1},
+                "score": {"target": 0.0, "limit": 1.0, "priority": 10.0},
+                "gamma1": {"target": GAMMA_MIN, "limit": GAMMA_MAX, "priority": 0.1},
+                "gamma2": {"target": GAMMA_MIN, "limit": GAMMA_MAX, "priority": 0.1},
+                "lambda1": {
+                    "target": 0.0,
+                    "limit": LAMBDA_MAX_FACTOR * len(fit_data),
+                    "priority": 0.1,
+                },
+                "lambda2": {
+                    "target": 0.0,
+                    "limit": LAMBDA_MAX_FACTOR * len(fit_data),
+                    "priority": 0.1,
+                },
             }
             tuner = tune(
                 _fit_bridge,
@@ -137,23 +166,24 @@ class CrossFittingEstimator:
             scores = tuner.get_best_scores()
         else:
             params = self.params[which]
-            scores = {"score": np.nan}
+            scores = {
+                "score": np.nan,
+                "gamma1": np.nan,
+                "gamma2": np.nan,
+                "lambda1": np.nan,
+                "lambda2": np.nan,
+            }
 
         # fit bridge function
         bridge = method(
             params["lambda1"],
             params["lambda2"],
-            params["gamma"],
-            treatment_prob=treatment_prob,
+            params["gamma1"],
+            params["gamma2"],
         )
         bridge.fit(fit_data)
         if self.verbose:
-            print(
-                f"Bridge {which} params:",
-                {k: np.round(v, 7) for k, v in params.items()},
-                "score: ",
-                np.round(scores["score"], 7),
-            )
+            print(f"Bridge {which} params: {params}, score: {scores['score']}")
 
         return bridge, params, scores
 
@@ -211,8 +241,8 @@ class CrossFittingEstimator:
             params_config["gamma"] = {"values": [self.params[name]["gamma"]]}
         else:
             params_config["gamma"] = {
-                "min": GAMMA_MIN_FACTOR / len(X) ** (1 / 2),
-                "max": GAMMA_MAX_FACTOR / len(X) ** (1 / 2),
+                "min": REG_GAMMA_MIN,
+                "max": REG_GAMMA_MAX,
                 "scale": "log",
             }
 
@@ -240,12 +270,7 @@ class CrossFittingEstimator:
         cond_mean.fit(X, y)
 
         if self.verbose:
-            print(
-                f"{name} params:",
-                {k: np.round(v, 3) for k, v in params.items()},
-                "r2: ",
-                np.round(scores["r2"], 3),
-            )
+            print(f"{name} params: {params}, r2: {scores['r2']}")
 
         return cond_mean, params, scores
 
@@ -256,8 +281,8 @@ class CrossFittingEstimator:
         def build_reg(C, degree):
             return Pipeline(
                 [
-                    ("poly", PolynomialFeatures(degree=int(degree))),
                     ("std_scaler", StandardScaler()),
+                    ("poly", PolynomialFeatures(degree=int(degree))),
                     ("logistic", LogisticRegression(C=C, max_iter=5000)),
                 ]
             )
@@ -267,7 +292,7 @@ class CrossFittingEstimator:
             reg.fit(fit_data.x, fit_data.a.flatten())
             return {
                 "log_loss": log_loss(
-                    val_data.a.flatten(), reg.predict_proba(val_data.x)[:, 1]
+                    val_data.a.flatten(), reg.predict_proba(val_data.x)
                 )
             }
 
@@ -323,15 +348,15 @@ class CrossFittingEstimator:
 
         return prob, params, scores
 
-    def fit(self, hidmed_dataset):
+    def fit(self, hidmed_dataset, reduce=True, split_seed=None):
         """Cross-fitting estimator."""
-        data_splits = hidmed_dataset.split(self.folds + 1)
+        data_splits = hidmed_dataset.split(self.folds + 1, seed=split_seed)
 
         # split data into training and validation sets
         data_splits, val_data = data_splits[:-1], data_splits[-1]
 
         # cross-fitting estimation
-        res = 0.0
+        res = []
         for i, fit_data in enumerate(data_splits):
 
             if self.folds > 1:
@@ -352,17 +377,25 @@ class CrossFittingEstimator:
 
             # estimation
             res_i = self.estimate(fit_data, eval_data, val_data)
+            assert res_i.ndim == 1
 
             if self.verbose:
-                print(f"==== Estimate {i+1}: {res_i}")
+                if hasattr(res_i, "__len__"):
+                    print(f"==== Estimate {i+1}: {np.mean(res_i)}, {len(res_i)} values")
+                else:
+                    print(f"==== Estimate {i+1}: {res_i}")
 
-            res += res_i
+            res.append(res_i)
 
+        res = np.hstack(res)
+        reduced_estimate = np.mean(res)
         if self.verbose:
-            print(f"==== Estimate: {res / self.folds}")
+            print(
+                f"==== {type(self).__name__} estimate: {reduced_estimate}, {len(res)} values"
+            )
 
-        return res / self.folds
+        return reduced_estimate if reduce else res
 
     def estimate(self, fit_data, eval_data, val_data):
-        """Perform the estimation."""
+        """Return point estimates for every data point."""
         raise NotImplementedError
