@@ -59,7 +59,8 @@ class KernelBridgeQ(KernelBridgeBase):
                 kf,
                 g1,
                 g2,
-                LAMBDA_MIN_FACTOR * kf.shape[0] ** 0.2,
+                self.lambda2,
+                # LAMBDA_MIN_FACTOR * kf.shape[0] ** 0.2,
             )
         except np.linalg.LinAlgError:
             return np.inf

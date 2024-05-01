@@ -138,8 +138,8 @@ class ProximalEstimatorBase:
         if any([len(v.get("values", [])) != 1 for _, v in params_config.items()]):
             objectives_config = {
                 "score": {"target": 0.0, "limit": 1.0, "priority": 10.0},
-                "gamma1": {"target": GAMMA_MIN, "limit": GAMMA_MAX, "priority": 0.1},
-                "gamma2": {"target": GAMMA_MIN, "limit": GAMMA_MAX, "priority": 0.1},
+                "gamma1": {"target": GAMMA_MAX, "limit": GAMMA_MIN, "priority": 0.1},
+                "gamma2": {"target": GAMMA_MAX, "limit": GAMMA_MIN, "priority": 0.1},
                 "lambda1": {
                     "target": 0.0,
                     "limit": LAMBDA_MAX_FACTOR * len(fit_data),
