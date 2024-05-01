@@ -46,7 +46,7 @@ class CrossFittingEstimatorBase:
         num_runs=200,
         num_jobs=1,
         verbose=True,
-        **kwargs,
+        param_dict=None,
     ):
         self.folds = folds
         self.base_estimator_params = {
@@ -55,10 +55,16 @@ class CrossFittingEstimatorBase:
             "num_runs": num_runs,
             "num_jobs": num_jobs,
             "verbose": verbose,
-            **kwargs,
         }
         self.verbose = verbose
         self.estimators = []
+
+        # dictionary of parameter dictionaries, one per fold
+        # if none, perform hyperparameter tuning
+        if param_dict is None:
+            self.param_dict = {fold: {} for fold in range(folds)}
+        else:
+            self.param_dict = param_dict
 
     def fit(self, hidmed_dataset, seed=None):
         """Fit an estimator to each fold of the data"""
@@ -73,11 +79,14 @@ class CrossFittingEstimatorBase:
                 print(f"==== Fitting fold {i+1} ({len(fit_data)} data points)")
 
             # fit estimator
-            estimator = self.base_estimator(**self.base_estimator_params)
+            estimator = self.base_estimator(
+                **self.base_estimator_params, **self.param_dict[i]
+            )
             estimator.fit(fit_data, self.val_data)
 
             # store estimator
             self.estimators.append(estimator)
+            self.param_dict[i] = estimator.params
 
         return self
 
