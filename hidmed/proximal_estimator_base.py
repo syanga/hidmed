@@ -13,67 +13,63 @@ from hola.tune import tune
 from .bridge_h import KernelBridgeH
 from .bridge_q import KernelBridgeQ
 
-
-LAMBDA_MIN_FACTOR = 1e-6
-LAMBDA_MAX_FACTOR = 50.0
-LAMBDA_GRID = 20
-
-GAMMA_MIN = 1e-3
-GAMMA_MAX = 1e1
-GAMMA_GRID = 50
-
-REG_GAMMA_MIN = 1e-3
-REG_GAMMA_MAX = 1e1
-
-ALPHA_MIN = 1e-7
-ALPHA_MAX = 1e1
-
-C_MIN = 1e-1
-C_MAX = 1e7
-
-DEGREE_MIN = 1
-DEGREE_MAX = 3
+from .parameters import (
+    LAMBDA_MIN_FACTOR,
+    LAMBDA_MAX_FACTOR,
+    LAMBDA_GRID,
+    GAMMA_MIN,
+    GAMMA_MAX,
+    GAMMA_GRID,
+    REG_GAMMA_MIN,
+    REG_GAMMA_MAX,
+    ALPHA_MIN,
+    ALPHA_MAX,
+    C_MIN,
+    C_MAX,
+    DEGREE_MIN,
+    DEGREE_MAX,
+)
 
 
-class CrossFittingEstimator:
-    """Estimator that uses cross-fitting to estimate the nuisance functions"""
+class ProximalEstimatorBase:
 
     def __init__(
         self,
-        generalized_model=True,
+        setup,
         kernel_metric="rbf",
-        folds=2,
         num_runs=200,
-        n_jobs=1,
+        num_jobs=1,
         verbose=True,
         **kwargs,
     ):
-        # estimate psi2 if generalized model, else estimate psi1
-        self.generalized_model = generalized_model
-
-        # kernel hyperparameters
-        assert kernel_metric in ["rbf", "laplacian"]
+        assert setup in ["a", "b", "c"], "Invalid setup. Choose from ['a', 'b', 'c']"
+        assert kernel_metric in [
+            "rbf",
+            "laplacian",
+        ], "Invalid kernel metric. Choose from ['rbf', 'laplacian']"
+        self.setup = setup
         self.kernel_metric = kernel_metric
-
-        # cross-fitting folds
-        self.folds = max(1, folds)
-
-        # place to store provided or selected hyperparameters
-        self.params = {}
-
-        # hyperparameter tuning with HOLA
         self.num_runs = num_runs
-        self.n_jobs = n_jobs
-
-        # verbose output
+        self.num_jobs = num_jobs
         self.verbose = verbose
+
+        # set any provided parameters
+        self.params = {}
+        for key in ["treatment", "h", "q", "eta"]:
+            if key in kwargs:
+                self.params[key] = kwargs[key]
+
+    def fit(self, fit_data, val_data):
+        """Fit the estimator"""
+        raise NotImplementedError
+
+    def evaluate(self, eval_data):
+        """Evaluate the estimator after fitting pointwise on the evaluation data"""
+        raise NotImplementedError
 
     def fit_bridge(self, fit_data, val_data, which="h"):
         """Fit bridge function with hyperparameter tuning"""
-        if which == "h":
-            method = KernelBridgeH
-        else:
-            method = KernelBridgeQ
+        method = KernelBridgeH if which == "h" else KernelBridgeQ
 
         def _fit_bridge(lambda1, lambda2, gamma1, gamma2):
             est = method(lambda1, lambda2, gamma1, gamma2)
@@ -160,7 +156,7 @@ class CrossFittingEstimator:
                 params_config,
                 objectives_config,
                 self.num_runs,
-                self.n_jobs,
+                self.num_jobs,
             )
             params = tuner.get_best_params()
             scores = tuner.get_best_scores()
@@ -256,7 +252,7 @@ class CrossFittingEstimator:
                 params_config,
                 objectives_config,
                 self.num_runs,
-                self.n_jobs,
+                self.num_jobs,
             )
 
             params = tuner.get_best_params()
@@ -325,7 +321,7 @@ class CrossFittingEstimator:
         if any([len(v.get("values", [])) != 1 for _, v in params_config.items()]):
             objectives_config = {"log_loss": {"target": 0.0, "limit": 1e2}}
             tuner = tune(
-                fit_prob, params_config, objectives_config, self.num_runs, self.n_jobs
+                fit_prob, params_config, objectives_config, self.num_runs, self.num_jobs
             )
 
             params = tuner.get_best_params()
@@ -347,55 +343,3 @@ class CrossFittingEstimator:
             )
 
         return prob, params, scores
-
-    def fit(self, hidmed_dataset, reduce=True, split_seed=None):
-        """Cross-fitting estimator."""
-        data_splits = hidmed_dataset.split(self.folds + 1, seed=split_seed)
-
-        # split data into training and validation sets
-        data_splits, val_data = data_splits[:-1], data_splits[-1]
-
-        # cross-fitting estimation
-        res = []
-        for i, fit_data in enumerate(data_splits):
-
-            if self.folds > 1:
-                # set up data for cross-fitting
-                eval_data = data_splits[0 if i > 0 else 1].copy()
-                for j, data_split in enumerate(data_splits):
-                    if j == i:
-                        continue
-                    eval_data.extend(data_split)
-            else:
-                # no cross-fitting: use the same data for fitting and estimation
-                eval_data = fit_data
-
-            if self.verbose:
-                print(
-                    f"==== Cross-fitting fold {i+1} ({len(fit_data)}/{len(eval_data)} fit/eval)"
-                )
-
-            # estimation
-            res_i = self.estimate(fit_data, eval_data, val_data)
-            assert res_i.ndim == 1
-
-            if self.verbose:
-                if hasattr(res_i, "__len__"):
-                    print(f"==== Estimate {i+1}: {np.mean(res_i)}, {len(res_i)} values")
-                else:
-                    print(f"==== Estimate {i+1}: {res_i}")
-
-            res.append(res_i)
-
-        res = np.hstack(res)
-        reduced_estimate = np.mean(res)
-        if self.verbose:
-            print(
-                f"==== {type(self).__name__} estimate: {reduced_estimate}, {len(res)} values"
-            )
-
-        return reduced_estimate if reduce else res
-
-    def estimate(self, fit_data, eval_data, val_data):
-        """Return point estimates for every data point."""
-        raise NotImplementedError

@@ -4,6 +4,7 @@ import numpy as np
 
 from .minimax import kkt_solve, score_nuisance_function
 from .bridge_base import KernelBridgeBase
+from .parameters import LAMBDA_MIN_FACTOR
 
 
 class KernelBridgeH(KernelBridgeBase):
@@ -40,10 +41,6 @@ class KernelBridgeH(KernelBridgeBase):
         """Score the bridge function"""
         g1, g2, wx, zx, loc = self.extract_data(val_data)
 
-        # h1 = self(wx[loc])
-        # f1 = self.f(zx[loc])
-        # return score_nuisance_function(g1, g2, h1, f1, f1, f1)
-
         kf1 = self.kernel2(zx[loc], zx)
         kf = self.kernel2(zx, zx)
         try:
@@ -55,8 +52,7 @@ class KernelBridgeH(KernelBridgeBase):
                 kf,
                 g1,
                 g2,
-                1e-6 * kf.shape[0],
-                # self.lambda2,
+                LAMBDA_MIN_FACTOR * kf.shape[0],
             )
         except np.linalg.LinAlgError:
             return np.inf

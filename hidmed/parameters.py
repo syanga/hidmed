@@ -1,0 +1,21 @@
+"""Constant parameters for hyperparameter tuning."""
+
+LAMBDA_MIN_FACTOR = 1e-5
+LAMBDA_MAX_FACTOR = 50.0
+LAMBDA_GRID = 20
+
+GAMMA_MIN = 1e-4
+GAMMA_MAX = 1e1
+GAMMA_GRID = 50
+
+REG_GAMMA_MIN = 1e-3
+REG_GAMMA_MAX = 1e1
+
+ALPHA_MIN = 1e-7
+ALPHA_MAX = 1e1
+
+C_MIN = 1e-1
+C_MAX = 1e7
+
+DEGREE_MIN = 1
+DEGREE_MAX = 3
