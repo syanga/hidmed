@@ -92,8 +92,8 @@ class ProximalEstimatorBase:
             params_config["lambda1"] = {"values": [self.params[which]["lambda1"]]}
         else:
             params_config["lambda1"] = {
-                "min": LAMBDA_MIN_FACTOR * len(fit_data),
-                "max": LAMBDA_MAX_FACTOR * len(fit_data),
+                "min": LAMBDA_MIN_FACTOR * len(fit_data) ** 0.2,
+                "max": LAMBDA_MAX_FACTOR * len(fit_data) ** 0.2,
                 "scale": "log",
                 "grid": LAMBDA_GRID,
             }
@@ -104,8 +104,8 @@ class ProximalEstimatorBase:
             params_config["lambda2"] = {"values": [self.params[which]["lambda2"]]}
         else:
             params_config["lambda2"] = {
-                "min": LAMBDA_MIN_FACTOR * len(fit_data),
-                "max": LAMBDA_MAX_FACTOR * len(fit_data),
+                "min": LAMBDA_MIN_FACTOR * len(fit_data) ** 0.2,
+                "max": LAMBDA_MAX_FACTOR * len(fit_data) ** 0.2,
                 "scale": "log",
                 "grid": LAMBDA_GRID,
             }
