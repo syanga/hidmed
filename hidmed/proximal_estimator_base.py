@@ -78,8 +78,8 @@ class ProximalEstimatorBase:
             score = est.score(val_data)
             return {
                 "score": score,
-                # "gamma1": gamma1,
-                # "gamma2": gamma2,
+                "gamma1": gamma1,
+                "gamma2": gamma2,
                 "lambda1": lambda1,
                 "lambda2": lambda2,
             }
@@ -118,10 +118,10 @@ class ProximalEstimatorBase:
         else:
             params_config["gamma1"] = {
                 "values": [GAMMA_VALUE],
-                # "min": GAMMA_MIN,
-                # "max": GAMMA_MAX,
-                # "scale": "log",
-                # "grid": GAMMA_GRID,
+                "min": GAMMA_MIN,
+                "max": GAMMA_MAX,
+                "scale": "log",
+                "grid": GAMMA_GRID,
             }
         if (
             self.params.get(which, None) is not None
@@ -131,18 +131,18 @@ class ProximalEstimatorBase:
         else:
             params_config["gamma2"] = {
                 "values": [GAMMA_VALUE],
-                # "min": GAMMA_MIN,
-                # "max": GAMMA_MAX,
-                # "scale": "log",
-                # "grid": GAMMA_GRID,
+                "min": GAMMA_MIN,
+                "max": GAMMA_MAX,
+                "scale": "log",
+                "grid": GAMMA_GRID,
             }
 
         # hyperparameter tuning, or use provided values
         if any([len(v.get("values", [])) != 1 for _, v in params_config.items()]):
             objectives_config = {
                 "score": {"target": 0.0, "limit": 1.0, "priority": 10.0},
-                # "gamma1": {"target": GAMMA_MIN, "limit": GAMMA_MAX, "priority": 0.1},
-                # "gamma2": {"target": GAMMA_MAX, "limit": GAMMA_MIN, "priority": 0.1},
+                "gamma1": {"target": GAMMA_MIN, "limit": GAMMA_MAX, "priority": 0.1},
+                "gamma2": {"target": GAMMA_MAX, "limit": GAMMA_MIN, "priority": 0.1},
                 "lambda1": {
                     "target": 0.0,
                     "limit": LAMBDA_MAX_FACTOR * len(fit_data) ** 0.2,
@@ -167,8 +167,8 @@ class ProximalEstimatorBase:
             params = self.params[which]
             scores = {
                 "score": np.nan,
-                # "gamma1": np.nan,
-                # "gamma2": np.nan,
+                "gamma1": np.nan,
+                "gamma2": np.nan,
                 "lambda1": np.nan,
                 "lambda2": np.nan,
             }
