@@ -254,7 +254,7 @@ class ProximalEstimatorBase:
                 _fit_conditional_mean,
                 params_config,
                 objectives_config,
-                self.num_runs,
+                max(100, self.num_runs),
                 self.num_jobs,
             )
 
@@ -322,9 +322,13 @@ class ProximalEstimatorBase:
 
         # hyperparameter tuning, or use provided values
         if any([len(v.get("values", [])) != 1 for _, v in params_config.items()]):
-            objectives_config = {"log_loss": {"target": 0.0, "limit": 1e2}}
+            objectives_config = {"log_loss": {"target": 0.0, "limit": 1e1}}
             tuner = tune(
-                fit_prob, params_config, objectives_config, self.num_runs, self.num_jobs
+                fit_prob,
+                params_config,
+                objectives_config,
+                max(50, self.num_runs),
+                self.num_jobs,
             )
 
             params = tuner.get_best_params()

@@ -82,7 +82,7 @@ class LinearHidMedDGP:
 
         # covariances
         self.xcov = np.eye(xdim)
-        self.ucov = np.eye(udim)
+        self.ucov = var * np.eye(udim)
 
         self.mcov = var * np.eye(mdim)
         self.ycov = var * np.eye(ydim)
