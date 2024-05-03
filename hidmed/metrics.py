@@ -1,16 +1,16 @@
 import numpy as np
 
 
+def confidence_interval(x):
+    """Calculate confidence interval"""
+    return 2 * (1.96 * np.std(x) / np.sqrt(len(x.flatten())))
+
+
 def is_covered(psi, true_psi):
     """check if true value is covered by estimates with 95% confidence"""
     mean = np.mean(psi)
-    ci = 1.96 * np.std(psi) / np.sqrt(len(psi))
-    return true_psi <= mean + ci and true_psi >= mean - ci
-
-
-def confidence_interval(x):
-    """Calculate confidence interval"""
-    return 2 * (1.96 * np.std(x) / np.sqrt(len(x)))
+    half_ci = 0.5 * confidence_interval(psi)
+    return true_psi <= mean + half_ci and true_psi >= mean - half_ci
 
 
 def calculate_mse(psi, true_psi):

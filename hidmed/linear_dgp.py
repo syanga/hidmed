@@ -53,11 +53,10 @@ class LinearHidMedDGP:
         self.Wam = sampler(low=l, high=u, size=(1, mdim))
 
         # Y = X @ Wxy + U @ Wuy + A @ Way + M @ Wmy + W @ Wwy + epsy
-        self.Wxy = sampler(low=l, high=u, size=(xdim, ydim)) / xdim
-        self.Wuy = sampler(low=l, high=u, size=(udim, ydim)) / udim
+        self.Wxy = 2 * sampler(low=l, high=u, size=(xdim, ydim)) / xdim
+        self.Wuy = -3 * sampler(low=l, high=u, size=(udim, ydim)) / udim
         self.Wmy = sampler(low=l, high=u, size=(mdim, ydim)) / mdim
         self.Way = sampler(low=l, high=u, size=(1, ydim))
-        # self.Way = 2 * np.ones((1, ydim))
         self.Wwy = azwy_sampler(low=l, high=u, size=(wdim, ydim)) / wdim
 
         # Z = M @ Wmz + X @ Wxz + A @ Waz + epsz
@@ -128,14 +127,14 @@ class LinearHidMedDGP:
                 + self.Wxw @ self.Wwy
                 + self.Wxm @ (self.Wmy + self.Wmw @ self.Wwy)
             )
-            psi2 = p1 * np.mean(self.Way + data.x[(data.a == 1)[:, 0]] @ Wx).item()
+            psi2 = p1 * np.mean(self.Way + data.x[(data.a == 1)[:, 0]] @ Wx)
             psi2 += (
                 np.mean(
                     data.u / (1 + np.exp(data.x @ self.Wxa + data.u @ self.Wua)), axis=0
                 )
                 @ self.Wuy
-            )
-            return psi2.item()
+            ).item()
+            return psi2
 
     def diagnostics(self, n=100_000):
         """Check that p(A=1|X,U) is bounded away from 0 and 1"""
