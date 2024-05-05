@@ -68,12 +68,18 @@ class ProximalEstimatorBase:
         """Evaluate the estimator after fitting pointwise on the evaluation data"""
         raise NotImplementedError
 
-    def fit_bridge(self, fit_data, val_data, which="h"):
+    def fit_bridge(self, fit_data, val_data, which="h", treatment_prob=None):
         """Fit bridge function with hyperparameter tuning"""
-        method = KernelBridgeH if which == "h" else KernelBridgeQ
+        if which == "q" and treatment_prob is None:
+            method = KernelBridgeQ
+            treatment_prob, treatment_params, _ = self.fit_treatment_probability(fit_data, val_data)
+            self.treatment = treatment_prob
+            self.params["treatment"] = treatment_params
+        else:
+            method = KernelBridgeH
 
         def _fit_bridge(lambda1, lambda2, gamma1, gamma2):
-            est = method(lambda1, lambda2, gamma1, gamma2)
+            est = method(lambda1, lambda2, gamma1, gamma2, treatment_prob=treatment_prob)
             est.fit(fit_data)
             score = est.score(val_data)
             return {
@@ -179,6 +185,7 @@ class ProximalEstimatorBase:
             params["lambda2"],
             params["gamma1"],
             params["gamma2"],
+            treatment_prob=treatment_prob,
         )
         bridge.fit(fit_data)
         if self.verbose:

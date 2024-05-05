@@ -9,7 +9,6 @@ class ProximalInverseProbWeightingBase(ProximalEstimatorBase):
 
     def fit(self, fit_data, val_data):
         """Fit the PIPW estimator"""
-        # fit q bridge function
         q_fn, q_params, _ = self.fit_bridge(fit_data, val_data, which="q")
         self.q_fn = q_fn
         self.params["q"] = q_params

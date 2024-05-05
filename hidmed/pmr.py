@@ -21,7 +21,7 @@ class ProximalMultiplyRobustBase(ProximalEstimatorBase):
             self.params["treatment"] = treatment_params
 
         # fit bridge functions
-        q_fn, q_params, _ = self.fit_bridge(fit_data, val_data, which="q")
+        q_fn, q_params, _ = self.fit_bridge(fit_data, val_data, which="q", treatment_prob=treatment)
         self.q_fn = q_fn
         self.params["q"] = q_params
 
