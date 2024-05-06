@@ -12,13 +12,12 @@ class ProximalMultiplyRobustBase(ProximalEstimatorBase):
     def fit(self, fit_data, val_data):
         """Fit the PMR estimator"""
         # estimate treatment probability
-        if self.setup in ["b", "c"]:
-            treatment, treatment_params, _ = self.fit_treatment_probability(
-                fit_data,
-                val_data,
-            )
-            self.treatment = treatment
-            self.params["treatment"] = treatment_params
+        treatment, treatment_params, _ = self.fit_treatment_probability(
+            fit_data,
+            val_data,
+        )
+        self.treatment = treatment
+        self.params["treatment"] = treatment_params
 
         # fit bridge functions
         q_fn, q_params, _ = self.fit_bridge(fit_data, val_data, which="q", treatment_prob=treatment)
