@@ -4,6 +4,7 @@ import numpy as np
 
 from .proximal_estimator_base import ProximalEstimatorBase
 from .cross_fit_base import CrossFittingEstimatorBase
+from .parameters import MIN_PROP_SCORE
 
 
 class ProximalMultiplyRobustBase(ProximalEstimatorBase):
@@ -53,7 +54,7 @@ class ProximalMultiplyRobustBase(ProximalEstimatorBase):
             return res
 
         # estimate psi2
-        p_treat = self.treatment.predict_proba(eval_data.x)
+        p_treat = np.clip(self.treatment.predict_proba(eval_data.x), MIN_PROP_SCORE,1-MIN_PROP_SCORE)
         h_eval = self.h_fn(np.hstack((eval_data.w, eval_data.x)))
         q_eval = self.q_fn(np.hstack((eval_data.z, eval_data.x)))
         loc0 = eval_data.a[:, 0] == 0

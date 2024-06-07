@@ -14,27 +14,6 @@ from .bridge_h import KernelBridgeH
 from .bridge_q import KernelBridgeQ
 
 
-LAMBDA_MIN_FACTOR = 1e-6
-LAMBDA_MAX_FACTOR = 50.0
-LAMBDA_GRID = 20
-
-GAMMA_MIN = 1e-3
-GAMMA_MAX = 1e1
-GAMMA_GRID = 50
-
-REG_GAMMA_MIN = 1e-3
-REG_GAMMA_MAX = 1e1
-
-ALPHA_MIN = 1e-7
-ALPHA_MAX = 1e1
-
-C_MIN = 1e-1
-C_MAX = 1e7
-
-DEGREE_MIN = 1
-DEGREE_MAX = 3
-
-
 class CrossFittingEstimatorBase:
     """Estimator that uses cross-fitting to estimate the nuisance functions"""
 
@@ -68,21 +47,29 @@ class CrossFittingEstimatorBase:
 
     def fit(self, hidmed_dataset, seed=None):
         """Fit an estimator to each fold of the data"""
-        data_splits = hidmed_dataset.split(self.folds + 1, seed=seed)
-
-        # split data into fit/eval and validation sets
-        self.data_splits, self.val_data = data_splits[:-1], data_splits[-1]
+        self.data_splits = hidmed_dataset.split(self.folds, seed=seed)
 
         # fit estimator to each fold separately
-        for i, fit_data in enumerate(self.data_splits):
+        for i in range(self.folds):
+            # collect fitting and validation data for cross-fitting
+            fold_data = None
+            for j in range(self.folds):
+                if i == j and self.folds > 1:
+                    continue
+                if fold_data is None:
+                    fold_data = self.data_splits[j].copy()
+                else:
+                    fold_data.extend(self.data_splits[j].copy())
+            fit_data, val_data = fold_data.split(2)
+
             if self.verbose:
-                print(f"==== Fitting fold {i+1} ({len(fit_data)} data points)")
+                print(f"==== Fitting fold {i+1} ({len(fit_data)} fitting, {len(val_data)} valid.)")
 
             # fit estimator
             estimator = self.base_estimator(
                 **self.base_estimator_params, **self.param_dict[i]
             )
-            estimator.fit(fit_data, self.val_data)
+            estimator.fit(fit_data, val_data)
 
             # store estimator
             self.estimators.append(estimator)
@@ -97,20 +84,11 @@ class CrossFittingEstimatorBase:
         for i, estimator in enumerate(self.estimators):
             # no evaluation data manually provided
             if eval_data is None:
-                if self.folds == 1:
-                    # use cached fit data -- no cross-fitting
-                    eval_data = self.data_splits[i]
-                else:
-                    # set up data for cross-fitting
-                    eval_data = self.data_splits[0 if i > 0 else 1].copy()
-                    for j, data_split in enumerate(self.data_splits):
-                        if j == i:
-                            continue
-                        eval_data.extend(data_split)
+                # use cached fit data -- cross-fitting
+                eval_data = self.data_splits[i]
 
             # evaluate current estimator
-            res_i = estimator.evaluate(eval_data)
-            assert res_i.ndim == 1, "Estimator must return a 1D array"
+            res_i = estimator.evaluate(eval_data).flatten()
             res.append(res_i)
 
             if self.verbose and verbose:
@@ -119,12 +97,12 @@ class CrossFittingEstimatorBase:
                 else:
                     print(f"==== Estimate {i+1}: {res_i}")
 
-        res = np.hstack(res)
+        res = np.vstack(res)
         reduced_estimate = np.mean(res)
 
         if self.verbose and verbose:
             print(
-                f"==== {type(self).__name__} estimate: {reduced_estimate}, {len(res)} values"
+                f"==== {type(self).__name__} estimate: {reduced_estimate}, {len(res.flatten())} values"
             )
 
         return reduced_estimate if reduce else res

@@ -24,7 +24,7 @@ class LinearHidMedDGP:
         ydim=1,
         l=0.5,
         u=1.0,
-        var=0.1,
+        var=0.5,
         setup="c",
         nonnegative=False,
         azwy_nonnegative=False,
@@ -91,7 +91,8 @@ class LinearHidMedDGP:
 
     def sample_dataset(self, n, seed=None):
         """Sample a dataset of size n"""
-        np.random.seed(0 if seed is None else seed)
+        if seed is not None:
+            np.random.seed(seed)
         epsm = np.random.multivariate_normal(np.zeros(self.mdim), self.mcov, n)
         epsy = np.random.multivariate_normal(np.zeros(self.ydim), self.ycov, n)
         epsz = np.random.multivariate_normal(np.zeros(self.zdim), self.zcov, n)
@@ -115,7 +116,7 @@ class LinearHidMedDGP:
 
         return HidMedDataset(X, U, A, M, W, Z, Y)
 
-    def true_psi(self, n=100_000):
+    def true_psi(self, n=1_000_000):
         """Compute true value of \psi^{a',a} for the given setup"""
         if self.setup == "a":
             return self.Way.item()
@@ -136,8 +137,17 @@ class LinearHidMedDGP:
             ).item()
             return psi2
 
-    def diagnostics(self, n=100_000):
+    def propensity_score(self, x, n=100_000):
+        """Estimate the propensity score, p(A=1|X)"""
+        U = np.random.multivariate_normal(np.zeros(self.udim), self.ucov, n)
+        return np.mean([expit(x @ self.Wxa + u @ self.Wua) for u in U])
+
+    def predict_proba(self, x, n=100_000):
+        ps = np.array([self.propensity_score(_x) for _x in x])
+        return np.vstack((1-ps, ps)).T
+    
+    def diagnostics(self, n=100):
         """Check that p(A=1|X,U) is bounded away from 0 and 1"""
         data = self.sample_dataset(n)
-        probs = expit(data.x @ self.Wxa + data.u @ self.Wua)
-        return np.min(probs), np.max(probs)
+        prop_scores = np.array([propensity_score(x) for x in data.x])
+        return np.min(prop_scores), np.max(prop_scores)

@@ -60,6 +60,9 @@ class ProximalEstimatorBase:
             if key in kwargs:
                 self.params[key] = kwargs[key]
 
+        # pass in dgp directly for debug
+        self.dgp = kwargs.get("dgp", None)
+
     def fit(self, fit_data, val_data):
         """Fit the estimator"""
         raise NotImplementedError
@@ -70,96 +73,59 @@ class ProximalEstimatorBase:
 
     def fit_bridge(self, fit_data, val_data, which="h", treatment_prob=None):
         """Fit bridge function with hyperparameter tuning"""
-        if which == "q" and treatment_prob is None:
-            method = KernelBridgeQ
+        if treatment_prob is None and which == "q":
+            # fit propensity score if needed
             treatment_prob, treatment_params, _ = self.fit_treatment_probability(fit_data, val_data)
             self.treatment = treatment_prob
             self.params["treatment"] = treatment_params
-        else:
-            method = KernelBridgeH
 
-        def _fit_bridge(lambda1, lambda2, gamma1, gamma2):
-            est = method(lambda1, lambda2, gamma1, gamma2, treatment_prob=treatment_prob)
+        # which function to fit
+        method = KernelBridgeQ if which == "q" else KernelBridgeH
+
+#        def _fit_bridge(lambda1, lambda2, gamma1, gamma2):
+#            est = method(lambda1, lambda2, gamma1, gamma2, treatment_prob=treatment_prob)
+#            est.fit(fit_data)
+#            return {"score": est.score(val_data)}
+
+        def _fit_bridge(lambda1, lambda2, gamma):
+            est = method(lambda1, lambda2, gamma, gamma, treatment_prob=treatment_prob)
             est.fit(fit_data)
-            score = est.score(val_data)
-            return {
-                "score": score,
-                # "gamma1": gamma1,
-                # "gamma2": gamma2,
-                # "lambda1": lambda1,
-                # "lambda2": lambda2,
-            }
+            return {"score": est.score(val_data)}
 
         # set up hyperparameter tuning
         params_config = {}
-        if (
-            self.params.get(which, None) is not None
-            and self.params[which].get("lambda1", None) is not None
-        ):
-            params_config["lambda1"] = {"values": [self.params[which]["lambda1"]]}
-        else:
-            params_config["lambda1"] = {
-                "min": LAMBDA_MIN_FACTOR * len(fit_data) ** 0.2,
-                "max": LAMBDA_MAX_FACTOR * len(fit_data) ** 0.2,
-                "scale": "log",
-                "grid": LAMBDA_GRID,
-            }
-        if (
-            self.params.get(which, None) is not None
-            and self.params[which].get("lambda2", None) is not None
-        ):
-            params_config["lambda2"] = {"values": [self.params[which]["lambda2"]]}
-        else:
-            params_config["lambda2"] = {
-                "min": LAMBDA_MIN_FACTOR * len(fit_data) ** 0.2,
-                "max": LAMBDA_MAX_FACTOR * len(fit_data) ** 0.2,
-                "scale": "log",
-                "grid": LAMBDA_GRID,
-            }
-        if (
-            self.params.get(which, None) is not None
-            and self.params[which].get("gamma1", None) is not None
-        ):
-            params_config["gamma1"] = {"values": [self.params[which]["gamma1"]]}
-        else:
-            params_config["gamma1"] = {
-                # "values": [GAMMA_VALUE],
-                "min": GAMMA_MIN,
-                "max": GAMMA_MAX,
-                "scale": "log",
-                "grid": GAMMA_GRID,
-            }
-        if (
-            self.params.get(which, None) is not None
-            and self.params[which].get("gamma2", None) is not None
-        ):
-            params_config["gamma2"] = {"values": [self.params[which]["gamma2"]]}
-        else:
-            params_config["gamma2"] = {
-                # "values": [GAMMA_VALUE],
-                "min": GAMMA_MIN,
-                "max": GAMMA_MAX,
-                "scale": "log",
-                "grid": GAMMA_GRID,
-            }
+        for reg_param in ["lambda1", "lambda2"]:
+            if (
+                    self.params.get(which, None) is not None
+                    and self.params[which].get(reg_param, None) is not None
+            ):
+                params_config[reg_param] = {"values": [self.params[which][reg_param]]}
+            else:
+                params_config[reg_param] = {
+                    "min": LAMBDA_MIN_FACTOR * len(fit_data) ** 0.2,
+                    "max": LAMBDA_MAX_FACTOR * len(fit_data) ** 0.2,
+                    "scale": "log",
+                    # "grid": LAMBDA_GRID,
+                }
+
+#        for bandwidth_param in ["gamma1", "gamma2"]:
+        for bandwidth_param in ["gamma"]:
+            if (
+                    self.params.get(which, None) is not None
+                    and self.params[which].get(bandwidth_param, None) is not None
+            ):
+                params_config[bandwidth_param] = {"values": [self.params[which][bandwidth_param]]}
+            else:
+                params_config[bandwidth_param] = {
+                    "min": GAMMA_MIN,
+                    "max": GAMMA_MAX,
+                    "scale": "log",
+                    # "grid": GAMMA_GRID,
+                }
 
         # hyperparameter tuning, or use provided values
         if any([len(v.get("values", [])) != 1 for _, v in params_config.items()]):
-            objectives_config = {
-                "score": {"target": 0.0, "limit": 1.0, "priority": 10.0},
-                # "gamma1": {"target": GAMMA_MIN, "limit": GAMMA_MAX, "priority": 0.1},
-                # "gamma2": {"target": GAMMA_MAX, "limit": GAMMA_MIN, "priority": 0.1},
-                # "lambda1": {
-                #     "target": 0.0,
-                #     "limit": LAMBDA_MAX_FACTOR * len(fit_data) ** 0.2,
-                #     "priority": 0.1,
-                # },
-                # "lambda2": {
-                #     "target": 0.0,
-                #     "limit": LAMBDA_MAX_FACTOR * len(fit_data) ** 0.2,
-                #     "priority": 0.1,
-                # },
-            }
+            objectives_config = {"score": {"target": 0.0, "limit": 10.0}}
             tuner = tune(
                 _fit_bridge,
                 params_config,
@@ -171,20 +137,16 @@ class ProximalEstimatorBase:
             scores = tuner.get_best_scores()
         else:
             params = self.params[which]
-            scores = {
-                "score": np.nan,
-                # "gamma1": np.nan,
-                # "gamma2": np.nan,
-                # "lambda1": np.nan,
-                # "lambda2": np.nan,
-            }
+            scores = {"score": np.nan}
 
         # fit bridge function
         bridge = method(
             params["lambda1"],
             params["lambda2"],
-            params["gamma1"],
-            params["gamma2"],
+#            params["gamma1"],
+#            params["gamma2"],
+            params["gamma"],
+            params["gamma"],
             treatment_prob=treatment_prob,
         )
         bridge.fit(fit_data)
@@ -209,11 +171,10 @@ class ProximalEstimatorBase:
 
     def fit_conditional_mean(self, X, y, X_val, y_val, name="conditional_mean"):
         """Fit kernel ridge regression with hyperparameter tuning"""
-
         def build_reg(alpha, gamma):
             return Pipeline(
                 [
-                    ("scaler", StandardScaler()),
+                    # ("scaler", StandardScaler()),
                     (
                         "kernel_ridge",
                         KernelRidge(
@@ -261,7 +222,7 @@ class ProximalEstimatorBase:
                 _fit_conditional_mean,
                 params_config,
                 objectives_config,
-                max(100, self.num_runs),
+                max(200, self.num_runs),
                 self.num_jobs,
             )
 
@@ -283,13 +244,12 @@ class ProximalEstimatorBase:
     def fit_treatment_probability(self, fit_data, val_data):
         """Kernel logistic regression for treatment probability given
         covariates"""
-
         def build_reg(C, degree):
             return Pipeline(
                 [
-                    ("std_scaler", StandardScaler()),
-                    ("poly", PolynomialFeatures(degree=int(degree))),
-                    ("logistic", LogisticRegression(C=C, max_iter=5000)),
+                    # ("std_scaler", StandardScaler()),
+                    # ("poly", PolynomialFeatures(degree=int(degree))),
+                    ("logistic", LogisticRegression(C=C)),
                 ]
             )
 
@@ -334,7 +294,7 @@ class ProximalEstimatorBase:
                 fit_prob,
                 params_config,
                 objectives_config,
-                max(50, self.num_runs),
+                max(200, self.num_runs),
                 self.num_jobs,
             )
 

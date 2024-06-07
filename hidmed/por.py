@@ -2,6 +2,7 @@ import numpy as np
 
 from .proximal_estimator_base import ProximalEstimatorBase
 from .cross_fit_base import CrossFittingEstimatorBase
+from .parameters import MIN_PROP_SCORE
 
 
 class ProximalOutcomeRegressionBase(ProximalEstimatorBase):
@@ -33,7 +34,7 @@ class ProximalOutcomeRegressionBase(ProximalEstimatorBase):
         """Evaluate the POR estimator pointwise on the evaluation data"""
         # estimate treatment probability
         if self.setup in ["b", "c"]:
-            treatment_prob = self.treatment.predict_proba(eval_data.x)[:, 1]
+            treatment_prob = np.clip(self.treatment.predict_proba(eval_data.x)[:, 1], MIN_PROP_SCORE, 1-MIN_PROP_SCORE)
         else:
             treatment_prob = 1.0
 

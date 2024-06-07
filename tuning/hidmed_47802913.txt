@@ -1,0 +1,79 @@
+Initialized Job 0, run 0.
+>>> Tuning 250 samples, 5-fold, setup a, dim 1
+==== Fitting fold 1 (100 fitting, 100 valid.)
+Treatment prob params: {'C': 0.1, 'degree': 2} log_loss:  0.763
+Bridge q params: {'lambda1': 0.04040025792388021, 'lambda2': 195.32038209840164, 'gamma': 0.010000000000000004}, score: 0.27604265173300996
+Bridge h params: {'lambda1': 0.03664028661240394, 'lambda2': 0.5471982848376841, 'gamma': 0.010000000000000004}, score: 0.015985542332413102
+eta params: {'alpha': 0.021490414626778157, 'gamma': 0.010000000000000004}, r2: 0.851981570829901
+==== Fitting fold 2 (100 fitting, 100 valid.)
+Treatment prob params: {'C': 0.114, 'degree': 1} log_loss:  0.689
+Bridge q params: {'lambda1': 0.025118864315095805, 'lambda2': 0.0450549474684457, 'gamma': 0.010000000000000004}, score: 0.14252971129110983
+Bridge h params: {'lambda1': 0.1088933006242335, 'lambda2': 0.05896148892961021, 'gamma': 0.010000000000000004}, score: 0.012566167831984085
+eta params: {'alpha': 0.3311333089063158, 'gamma': 0.09705200357625188}, r2: 0.8147046937191226
+==== Fitting fold 3 (100 fitting, 100 valid.)
+Treatment prob params: {'C': 100000000.0, 'degree': 2} log_loss:  0.675
+Bridge q params: {'lambda1': 0.0899388115097008, 'lambda2': 0.17662167524811076, 'gamma': 0.010000000000000004}, score: 0.0637879960497255
+Bridge h params: {'lambda1': 0.028206543500088072, 'lambda2': 0.6227207120342431, 'gamma': 0.016681734216490347}, score: 0.0506534352121029
+eta params: {'alpha': 0.15432757929892793, 'gamma': 0.07989720770878408}, r2: 0.8126047607369752
+==== Fitting fold 4 (100 fitting, 100 valid.)
+Treatment prob params: {'C': 0.1, 'degree': 1} log_loss:  0.696
+Bridge q params: {'lambda1': 3.1642932692140855, 'lambda2': 85.49621302383997, 'gamma': 0.010000000000000004}, score: 0.18083389199528513
+Bridge h params: {'lambda1': 0.02537330606965425, 'lambda2': 0.02991937715785283, 'gamma': 0.011423950525262494}, score: 0.02310843257394305
+eta params: {'alpha': 0.0486466287977144, 'gamma': 0.1766895122425149}, r2: 0.8904264551828893
+==== Fitting fold 5 (100 fitting, 100 valid.)
+Treatment prob params: {'C': 100000000.0, 'degree': 3} log_loss:  0.679
+Bridge q params: {'lambda1': 1.470188684616805, 'lambda2': 172.1939327128005, 'gamma': 0.010000000000000004}, score: 0.14241354013152105
+Bridge h params: {'lambda1': 0.025118864315095805, 'lambda2': 0.3462107117077566, 'gamma': 0.013661095527094493}, score: 0.05180038449535189
+eta params: {'alpha': 0.06870114237589553, 'gamma': 0.02823839422989167}, r2: 0.7789880819147653
+>>> Tuning 500 samples, 5-fold, setup a, dim 1
+==== Fitting fold 1 (200 fitting, 200 valid.)
+Treatment prob params: {'C': 0.1, 'degree': 2} log_loss:  0.688
+Bridge q params: {'lambda1': 15.509585007153595, 'lambda2': 0.2532938055771857, 'gamma': 0.010000000000000004}, score: 0.09740125936781723
+Bridge h params: {'lambda1': 0.04040117973402281, 'lambda2': 0.5550502848126552, 'gamma': 0.010000000000000004}, score: 0.011208271185233322
+eta params: {'alpha': 0.05559586853240471, 'gamma': 0.010000000000000004}, r2: 0.8487759020036005
+==== Fitting fold 2 (200 fitting, 200 valid.)
+Treatment prob params: {'C': 100000000.0, 'degree': 3} log_loss:  0.691
+Bridge q params: {'lambda1': 0.058334255105604235, 'lambda2': 0.048485868150554966, 'gamma': 0.012677179135656339}, score: 0.10427812630380236
+Bridge h params: {'lambda1': 0.028853998118144278, 'lambda2': 4.411811069697494, 'gamma': 0.010000000000000004}, score: 0.0070183119936205835
+eta params: {'alpha': 0.015539281924029797, 'gamma': 0.3358989359722363}, r2: 0.8382891233361001
+==== Fitting fold 3 (200 fitting, 200 valid.)
+Treatment prob params: {'C': 100000000.0, 'degree': 4} log_loss:  0.678
+Bridge q params: {'lambda1': 10.533850530968431, 'lambda2': 0.5862379085207603, 'gamma': 0.010000000000000004}, score: 0.13072259442536238
+Bridge h params: {'lambda1': 0.028853998118144278, 'lambda2': 3.223139229022116, 'gamma': 0.015801328386383068}, score: 0.06854525495117866
+eta params: {'alpha': 0.11322972380526891, 'gamma': 0.9339215110500328}, r2: 0.813236941377031
+==== Fitting fold 4 (200 fitting, 200 valid.)
+Treatment prob params: {'C': 100000000.0, 'degree': 3} log_loss:  0.694
+Bridge q params: {'lambda1': 0.028853998118144278, 'lambda2': 0.08665100527898659, 'gamma': 0.010000000000000004}, score: 0.035058985661395495
+Bridge h params: {'lambda1': 0.028853998118144278, 'lambda2': 1.4879736699867234, 'gamma': 0.010000000000000004}, score: 0.013236360948933327
+eta params: {'alpha': 0.04161601117371863, 'gamma': 0.026917222405615924}, r2: 0.8380986417474542
+==== Fitting fold 5 (200 fitting, 200 valid.)
+Treatment prob params: {'C': 0.546, 'degree': 1} log_loss:  0.689
+Bridge q params: {'lambda1': 0.1363491576489695, 'lambda2': 0.2926641922522034, 'gamma': 0.010000000000000004}, score: 0.09644779403657175
+Bridge h params: {'lambda1': 0.028853998118144278, 'lambda2': 1.4759654782530758, 'gamma': 0.010000000000000004}, score: 0.016330292975287368
+eta params: {'alpha': 0.10349450394520143, 'gamma': 0.010000000000000004}, r2: 0.8537287588137261
+>>> Tuning 1000 samples, 5-fold, setup a, dim 1
+==== Fitting fold 1 (400 fitting, 400 valid.)
+Treatment prob params: {'C': 0.1, 'degree': 1} log_loss:  0.692
+Bridge q params: {'lambda1': 0.03314454017339988, 'lambda2': 0.18781703247202902, 'gamma': 0.011743671581616929}, score: 0.041898623929713906
+Bridge h params: {'lambda1': 0.03314454017339988, 'lambda2': 3.7525250763790474, 'gamma': 0.010390225608885108}, score: 0.033078358266655124
+eta params: {'alpha': 0.00855043250302306, 'gamma': 0.010000000000000004}, r2: 0.8045915396016842
+==== Fitting fold 2 (400 fitting, 400 valid.)
+Treatment prob params: {'C': 0.1, 'degree': 1} log_loss:  0.701
+Bridge q params: {'lambda1': 35.09348466267035, 'lambda2': 57.570269936096864, 'gamma': 0.010000000000000004}, score: 0.05258719470256937
+Bridge h params: {'lambda1': 0.089321625265904, 'lambda2': 1.516204348633701, 'gamma': 0.010113924381813223}, score: 0.0009567702309841846
+eta params: {'alpha': 6.371086694866574e-05, 'gamma': 0.010000000000000004}, r2: 0.8091733590462868
+==== Fitting fold 3 (400 fitting, 400 valid.)
+Treatment prob params: {'C': 100000000.0, 'degree': 3} log_loss:  0.689
+Bridge q params: {'lambda1': 31.95095800841629, 'lambda2': 5.088058377097983, 'gamma': 0.010000000000000004}, score: 0.029853230688260318
+Bridge h params: {'lambda1': 0.03314454017339988, 'lambda2': 0.6439739731400885, 'gamma': 0.010000000000000004}, score: 0.012195162659791928
+eta params: {'alpha': 0.00885305027843447, 'gamma': 0.0706737577612275}, r2: 0.8244908245809958
+==== Fitting fold 4 (400 fitting, 400 valid.)
+Treatment prob params: {'C': 100000000.0, 'degree': 1} log_loss:  0.685
+Bridge q params: {'lambda1': 0.07334466560405244, 'lambda2': 0.9990538343705447, 'gamma': 0.01053644795875726}, score: 0.0208261223202888
+Bridge h params: {'lambda1': 0.03314454017339988, 'lambda2': 81.37878103801992, 'gamma': 0.010000000000000004}, score: 0.012020551156949437
+eta params: {'alpha': 2.0686664472897667e-06, 'gamma': 0.010000000000000004}, r2: 0.8256048192941445
+==== Fitting fold 5 (400 fitting, 400 valid.)
+Treatment prob params: {'C': 100000000.0, 'degree': 3} log_loss:  0.688
+Bridge q params: {'lambda1': 0.037179865213333434, 'lambda2': 0.8629954393013858, 'gamma': 0.010669056675260295}, score: 0.03329010595614972
+Bridge h params: {'lambda1': 0.23165403679916655, 'lambda2': 1.6807831504251138, 'gamma': 0.010000000000000004}, score: 0.006621760637037612
+eta params: {'alpha': 0.4797321317643258, 'gamma': 0.49586965372577874}, r2: 0.8392652188354609

@@ -9,7 +9,20 @@ class ProximalInverseProbWeightingBase(ProximalEstimatorBase):
 
     def fit(self, fit_data, val_data):
         """Fit the PIPW estimator"""
-        q_fn, q_params, _ = self.fit_bridge(fit_data, val_data, which="q")
+        # estimate treatment probability
+        if self.dgp is None:
+            treatment, treatment_params, _ = self.fit_treatment_probability(
+                fit_data,
+                val_data,
+            )
+            self.treatment = treatment
+            self.params["treatment"] = treatment_params
+        else:
+            treatment = self.dgp
+            self.treatment = treatment
+
+        # fit bridge functions
+        q_fn, q_params, _ = self.fit_bridge(fit_data, val_data, which="q", treatment_prob=treatment)
         self.q_fn = q_fn
         self.params["q"] = q_params
 
@@ -17,13 +30,16 @@ class ProximalInverseProbWeightingBase(ProximalEstimatorBase):
 
     def evaluate(self, eval_data):
         """Evaluate the PIPW estimator pointwise on the evaluation data"""
-        if self.setup == "a":
-            loc1 = eval_data.a[:, 0] == 1
-            q1 = self.q_fn(np.hstack((eval_data.z[loc1], eval_data.x[loc1])))
-            return eval_data.y[loc1, 0] * q1
+        loc1 = eval_data.a[:, 0] == 1
+        a_eval = loc1.astype(float).flatten()
+        y_eval = eval_data.y[:, 0].flatten()
+        q_eval = self.q_fn(np.hstack((eval_data.z, eval_data.x))).flatten()
+        prop_score = self.treatment.predict_proba(eval_data.x)[:, 1]
 
-        q_eval = self.q_fn(np.hstack((eval_data.z, eval_data.x)))
-        return eval_data.a[:, 0] * eval_data.y[:, 0] * q_eval
+        if self.setup == "a":
+            return a_eval * y_eval * q_eval / prop_score
+        
+        return a_eval * y_eval * q_eval
 
 
 class ProximalInverseProbWeighting(CrossFittingEstimatorBase):

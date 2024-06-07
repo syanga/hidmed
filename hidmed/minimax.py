@@ -30,7 +30,12 @@ def kkt_solve(kh1, kf0, kf1, kf2, kh, kf, g1, g2, lambda1, lambda2):
     kkt_vec = np.zeros(3 * n)
     kkt_vec[n : 2 * n] = -(kf0.T.dot(np.ascontiguousarray(g2)))
 
+    # if np.linalg.matrix_rank(kkt_matrix) < kkt_matrix.shape[0]:
+    #     sol = np.linalg.lstsq(kkt_matrix, kkt_vec)[0]
+    # else:
+    #     sol = np.linalg.solve(kkt_matrix, kkt_vec)
     sol = np.linalg.solve(kkt_matrix, kkt_vec)
+
     alpha, beta = sol[:n], sol[n : 2 * n]
     return alpha, beta
 
@@ -45,7 +50,14 @@ def score_nuisance_function(h1, kf0, kf1, kf2, kf, g1, g2, lambda2):
     # form full KKT system
     kkt_matrix = kf2.T.dot(kf2) + lambda2 * kf
     kkt_vector = (kf0.T.dot(g2) + kf1.T.dot(g1 * h1)) * 0.5
+
+    # if np.linalg.matrix_rank(kkt_matrix) < kkt_matrix.shape[0]:
+    #     beta = np.linalg.lstsq(kkt_matrix, kkt_vector)[0]
+    # else:
+    #     beta = np.linalg.solve(kkt_matrix, kkt_vector)
+
     beta = np.linalg.solve(kkt_matrix, kkt_vector)
+
     f_values_0 = kf0.dot(beta)
     f_values_1 = kf1.dot(beta)
     f_values_2 = kf2.dot(beta)
@@ -56,14 +68,3 @@ def score_nuisance_function(h1, kf0, kf1, kf2, kf, g1, g2, lambda2):
         - np.mean(f_values_2**2)
     )
     return metric
-
-
-# @njit
-# def score_nuisance_function(g1, g2, h1, f0, f1, f2):
-#     """
-#     Score a fitted nuisance function (function h) by solving the minimax problem
-#     with respect to the beta vector (function f), with the values h(r1) fixed.
-#     Returns a score (lower is better).
-#     """
-#     metric = np.mean(g1 * h1 * f1) + np.mean(g2 * f0) - np.mean(f2**2)
-#     return metric**2

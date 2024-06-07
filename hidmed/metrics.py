@@ -2,7 +2,7 @@ import numpy as np
 
 
 def confidence_interval(x):
-    """Calculate confidence interval"""
+    """Calculate confidence interval length"""
     return 2 * (1.96 * np.std(x) / np.sqrt(len(x.flatten())))
 
 
